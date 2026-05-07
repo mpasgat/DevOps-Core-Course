@@ -1,0 +1,18 @@
+---
+# Python app deployment variables
+# Used by playbooks/deploy_python.yml
+
+# Application identity
+web_app_name: devops-python
+web_app_docker_image: "112005/devops-lab3-python"
+web_app_docker_tag: latest
+
+# Port mapping: host:5000 -> container:8080 (gunicorn)
+web_app_port: 5000
+web_app_internal_port: 8080
+
+# Docker Compose project directory
+web_app_project_dir: "/opt/{{ web_app_name }}"
+
+# Restart policy
+web_app_restart_policy: unless-stopped
