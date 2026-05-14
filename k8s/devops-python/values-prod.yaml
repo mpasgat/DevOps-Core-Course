@@ -1,0 +1,49 @@
+replicaCount: 3
+
+image:
+  tag: latest
+
+service:
+  type: ClusterIP
+  nodePort: null
+
+rollout:
+  enabled: false
+
+statefulset:
+  enabled: true
+  podManagementPolicy: OrderedReady
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 2
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+app:
+  environment: "prod"
+  logLevel: "warn"
+
+config:
+  env:
+    appMode: "prod"
+
+persistence:
+  enabled: true
+  size: 1Gi
+  storageClass: ""
+  mountPath: "/data"
+
+livenessProbe:
+  initialDelaySeconds: 30
+  periodSeconds: 5
+
+readinessProbe:
+  initialDelaySeconds: 10
+  periodSeconds: 3

@@ -1,0 +1,130 @@
+replicaCount: 3
+
+image:
+  repository: 112005/devops-lab3-python
+  tag: latest
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: false
+  name: ""
+
+service:
+  type: NodePort
+  port: 80
+  targetPort: 8080
+  nodePort: 30080
+
+rollout:
+  enabled: true
+  strategy: canary
+  revisionHistoryLimit: 2
+  blueGreen:
+    autoPromotionEnabled: false
+    autoPromotionSeconds: null
+    scaleDownDelaySeconds: 30
+  analysis:
+    enabled: true
+
+statefulset:
+  enabled: false
+  podManagementPolicy: OrderedReady
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 0
+
+headlessService:
+  enabled: true
+
+serviceMonitor:
+  enabled: false
+  namespace: ""
+  labels:
+    release: monitoring
+  interval: 30s
+  scrapeTimeout: 10s
+  path: /metrics
+  honorLabels: false
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+env:
+  - name: HOST
+    value: "0.0.0.0"
+  - name: PORT
+    value: "8080"
+
+app:
+  environment: "dev"
+  logLevel: "info"
+
+config:
+  enabled: true
+  mountPath: "/config"
+  file:
+    applicationName: "devops-info-service"
+    listenHost: "0.0.0.0"
+    listenPort: "8080"
+  env:
+    appName: "devops-info-service"
+    appMode: "kubernetes"
+    featureVisits: "true"
+    featureMetrics: "true"
+
+persistence:
+  enabled: true
+  size: 100Mi
+  storageClass: ""
+  mountPath: "/data"
+
+secrets:
+  enabled: true
+  name: ""
+  username: "change-me-username"
+  password: "change-me-password"
+
+vault:
+  enabled: false
+  authPath: "auth/kubernetes"
+  role: "devops-python-role"
+  secretPath: "secret/data/myapp/config"
+  injectFileName: "config"
+  injectTemplateFileName: "app-env"
+  injectCommand: ""
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 20
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+hooks:
+  enabled: true
+  image: busybox:1.36
+  preInstall:
+    command: "echo pre-install validation passed"
+  postInstall:
+    command: "for i in $(seq 1 30); do wget -qO- http://{{ include \"devops-python.fullname\" . }}:{{ .Values.service.port }}/health && exit 0; sleep 2; done; exit 1"
